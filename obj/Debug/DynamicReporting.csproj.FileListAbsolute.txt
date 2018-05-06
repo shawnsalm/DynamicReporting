@@ -1,0 +1,7 @@
+C:\Code\DynamicReporting\DynamicReporting\bin\Debug\DynamicReporting.exe.config
+C:\Code\DynamicReporting\DynamicReporting\bin\Debug\DynamicReporting.exe
+C:\Code\DynamicReporting\DynamicReporting\bin\Debug\DynamicReporting.pdb
+C:\Code\DynamicReporting\DynamicReporting\bin\Debug\System.Linq.Dynamic.dll
+C:\Code\DynamicReporting\DynamicReporting\obj\Debug\DynamicReporting.csprojResolveAssemblyReference.cache
+C:\Code\DynamicReporting\DynamicReporting\obj\Debug\DynamicReporting.exe
+C:\Code\DynamicReporting\DynamicReporting\obj\Debug\DynamicReporting.pdb
