@@ -14,16 +14,16 @@ namespace DynamicReporting
             List<Security> datalist = new List<Security>();
 
             datalist.Add(
-                new Security() { PortUID = "P851", CUSIP = "123456789", Sector = "A", MKV = 100000, MaturityDate = new DateTime(2020, 1, 1), PortTotalMarketValue = 800000 });
+                new Security() { PortUID = "P851", CUSIP = "123456789", Sector = "A", Rating = "AAA", MKV = 100000, MaturityDate = new DateTime(2020, 1, 1), PortTotalMarketValue = 800000 });
 
             datalist.Add(
-                new Security() { PortUID = "P851", CUSIP = "234567891", Sector = "A", MKV = 200000, MaturityDate = new DateTime(2019, 1, 1), PortTotalMarketValue = 800000 });
+                new Security() { PortUID = "P851", CUSIP = "234567891", Sector = "A", Rating = "AAA", MKV = 200000, MaturityDate = new DateTime(2019, 1, 1), PortTotalMarketValue = 800000 });
 
             datalist.Add(
-                new Security() { PortUID = "P851", CUSIP = "345678912", Sector = "A", MKV = 300000, MaturityDate = new DateTime(2020, 1, 1), PortTotalMarketValue = 800000 });
+                new Security() { PortUID = "P851", CUSIP = "345678912", Sector = "A", Rating = "BBB", MKV = 300000, MaturityDate = new DateTime(2020, 1, 1), PortTotalMarketValue = 800000 });
 
             datalist.Add(
-                new Security() { PortUID = "P851", CUSIP = "456789123", Sector = "B", MKV = 200000, MaturityDate = new DateTime(2024, 1, 1), PortTotalMarketValue = 800000 });
+                new Security() { PortUID = "P851", CUSIP = "456789123", Sector = "B", Rating = "AA", MKV = 200000, MaturityDate = new DateTime(2024, 1, 1), PortTotalMarketValue = 800000 });
 
 
             Hierarchy durationHierarchy = new Hierarchy();
@@ -59,15 +59,58 @@ namespace DynamicReporting
                 Statistic = "SUM(PercentageMKV)"
             });
 
+            var reportMatrixDataCreator = new ReportMatrixDataCreator(report, datalist);
 
-            var x = "";
+            Console.Write("-----------------------------\t");
 
-            
+            foreach (var topName in reportMatrixDataCreator.TopNames)
+            {
+                Console.Write(topName + "\t");
+            }
+
+            Console.Write("Total");
+
+            Console.WriteLine();
+
+            foreach (var sideName in reportMatrixDataCreator.SideNames.OrderBy(s => s))
+            {
+                Console.Write(sideName + "\t");
+
+                foreach (var topName in reportMatrixDataCreator.TopNames)
+                {
+                    foreach (var field in report.StatisticsFields)
+                    {
+                        Console.Write(reportMatrixDataCreator.GetData(reportMatrixDataCreator.CreateKey("P851", sideName, topName, field.FieldName)) ?? "---");
+                        Console.Write("\t");
+                    }
+                }
+
+                foreach (var field in report.StatisticsFields)
+                {
+                    Console.Write(reportMatrixDataCreator.GetData(reportMatrixDataCreator.CreateKey("P851", sideName, null, field.FieldName)) ?? "---");
+                }
+
+                Console.WriteLine();
+            }
+
+            Console.Write("Total------------------------\t");
+
+            foreach (var topName in reportMatrixDataCreator.TopNames)
+            {
+                foreach (var field in report.StatisticsFields)
+                {
+                    Console.Write(reportMatrixDataCreator.GetData(reportMatrixDataCreator.CreateKey("P851", topName, null, field.FieldName)) ?? "---");
+                    Console.Write("\t");
+                }
+            }
+
+            foreach (var field in report.StatisticsFields)
+            {
+                Console.Write(reportMatrixDataCreator.GetData(reportMatrixDataCreator.CreateKey("P851", null, null, field.FieldName)) ?? "---");
+            }
 
             Console.ReadLine();
-
         }
-
     }
 
     class ReportFactory
@@ -82,47 +125,112 @@ namespace DynamicReporting
         public ISecurityBucketFactory SecurityBucketFactory { get; set; }
     }
 
-    class ReportDataCreator
+    class ReportMatrixDataCreator
     {
         private Dictionary<string, object> _data = new Dictionary<string, object>();
 
         public HashSet<string> SideNames { get; set; }
         public HashSet<string> TopNames { get; set; }
 
-        public ReportDataCreator(Report report, List<Security> securities)
+        public ReportMatrixDataCreator(Report report, List<Security> securities)
         {
             SideNames = new HashSet<string>();
             TopNames = new HashSet<string>();
 
             var securityBuckets = report.SecurityBucketFactory.CreateSecurityBucket(securities, null);
+
+            var topPortUIDTotalSecuritiesMap = new Dictionary<string, Dictionary<string, List<Security>>>();
                        
             foreach (var securityBucket in securityBuckets)
             {
+                if(!SideNames.Contains(securityBucket.Name))
+                {
+                    SideNames.Add(securityBucket.Name);
+                }
 
+                dynamic sideFieldsData = CreateFieldData(securityBucket.Securities, report);
+
+                foreach (var field in report.StatisticsFields)
+                {
+                    var key = CreateKey(sideFieldsData.GetType().GetProperty("PortUID").GetValue(sideFieldsData, null).ToString(),
+                                securityBucket.Name, null, field.FieldName);
+
+                    _data.Add(key, sideFieldsData.GetType().GetProperty(field.FieldName).GetValue(sideFieldsData, null));
+                }
 
                 foreach (var childSecurityBucket in securityBucket.ChildrenSecurityBucket)
                 {
+                    if (!TopNames.Contains(securityBucket.Name))
+                    {
+                        TopNames.Add(childSecurityBucket.Name);
+                    }
 
+                    dynamic topFieldsData = CreateFieldData(childSecurityBucket.Securities, report);
+
+                    foreach (var field in report.StatisticsFields)
+                    {
+                        var key = CreateKey(topFieldsData.GetType().GetProperty("PortUID").GetValue(topFieldsData, null).ToString(),
+                                    securityBucket.Name, childSecurityBucket.Name, field.FieldName);
+
+                        _data.Add(key, topFieldsData.GetType().GetProperty(field.FieldName).GetValue(topFieldsData, null));
+
+                        Dictionary<string, List<Security>> topTotalSecuritiesMap;
+
+                        if (!topPortUIDTotalSecuritiesMap.TryGetValue(topFieldsData.GetType().GetProperty("PortUID").GetValue(topFieldsData, null).ToString(), out topTotalSecuritiesMap))
+                        {
+                            topTotalSecuritiesMap = new Dictionary<string, List<Security>>();
+                            topPortUIDTotalSecuritiesMap.Add(topFieldsData.GetType().GetProperty("PortUID").GetValue(topFieldsData, null).ToString(), topTotalSecuritiesMap);
+                        }
+                        
+                        List<Security> topSecurities;
+
+                        if(!topTotalSecuritiesMap.TryGetValue(childSecurityBucket.Name, out topSecurities))
+                        {
+                            topSecurities = new List<Security>();
+                            topTotalSecuritiesMap.Add(childSecurityBucket.Name, topSecurities);
+                        }
+
+                        topSecurities.AddRange(childSecurityBucket.Securities);
+                    }
                 }
-
             }
+
+            // Totals columns
+            foreach(var portUID in topPortUIDTotalSecuritiesMap.Keys)
+            {
+                var topTotalSecuritiesMap = topPortUIDTotalSecuritiesMap[portUID];
+
+                foreach (var key in topTotalSecuritiesMap.Keys)
+                {
+                    // get totals for whole report
+                    dynamic fieldsTopData = CreateFieldData(topTotalSecuritiesMap[key], report);
+
+                    foreach (var field in report.StatisticsFields)
+                    {
+                        var topKey = CreateKey(portUID, key, null, field.FieldName);
+
+                        _data.Add(topKey, fieldsTopData.GetType().GetProperty(field.FieldName).GetValue(fieldsTopData, null));
+                    }
+                }
+            }
+
 
             // get totals for whole report
             dynamic fieldsData = CreateFieldData(securities, report);
 
             foreach(var field in report.StatisticsFields)
             {
-                var key = CreateKey(field.GetType().GetProperty("PortUID").GetValue(field, null).ToString(),
+                var key = CreateKey(fieldsData.GetType().GetProperty("PortUID").GetValue(fieldsData, null).ToString(),
                             null, null, field.FieldName);
 
-                _data.Add(key, field.GetType().GetProperty(field.FieldName).GetValue(field, null));
+                _data.Add(key, fieldsData.GetType().GetProperty(field.FieldName).GetValue(fieldsData, null));
             }
 
         }
 
         public string CreateKey(string portUID, string sideName = "", string topName = "", string fieldName = "")
         {
-            return portUID + "~" + sideName ?? "" + "~" + topName ?? "" + "~" + fieldName ?? "";
+            return portUID + "~" + (sideName ?? "") + "~" + (topName ?? "") + "~" + (fieldName ?? "");
         }
 
         public object GetData(string key)
@@ -132,7 +240,7 @@ namespace DynamicReporting
                 return _data[key];
             }
 
-            throw new Exception("Invalid key: " + key);
+            return null; 
         }
 
         private dynamic CreateFieldData(List<Security> securities, Report report)
@@ -141,7 +249,7 @@ namespace DynamicReporting
 
             return securities.AsQueryable()
                     .GroupBy("new(PortUID)", "it")
-                    .Select("new(Key.PortUID, " + fields)
+                    .Select("new(Key.PortUID, " + fields + ")")
                     .Cast<dynamic>().Select(s1 => s1).FirstOrDefault();
         }
     }
@@ -160,6 +268,8 @@ namespace DynamicReporting
         public string CUSIP { get; set; }
 
         public string Sector { get; set; }
+
+        public string Rating { get; set; }
 
         public decimal MKV { get; set; }
 
