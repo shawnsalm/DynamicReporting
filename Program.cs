@@ -47,273 +47,22 @@ namespace DynamicReporting
                 Condition = "Duration >= 3 && Duration < 6",
                 Name = "Duration >= 3 && Duration < 6"
             });
-
-            ISecurityBucketFactory securityBucketFactory = new HierarchySecurityBucketFactory(new GroupSecurityBucketFactory(null, "Sector"), durationHierarchy);
-
-            var s = securityBucketFactory.CreateSecurityBucket(datalist, null);
-
-
-            var f = s[0].Securities.AsQueryable()
-                .GroupBy("new(PortUID)", "it")
-                .Select("new(Key.PortUID, SUM(PercentageMKV) as PercentageMKV)");
-
-
-
-
+                        
+            Report report = new Report();
+            report.Name = "Test Report";
+            report.SecurityBucketFactory = new HierarchySecurityBucketFactory(new GroupSecurityBucketFactory(null, "Sector"), durationHierarchy);
+            report.StatisticsFields = new List<StatisticsField>();
+            report.StatisticsFields.Add(new StatisticsField()
+            {
+                DisplayName = "%MKV",
+                FieldName = "PercentageMKV",
+                Statistic = "SUM(PercentageMKV)"
+            });
 
 
             var x = "";
 
-            /*
-
-            var hierarchyBucket01Securities = datalist.AsQueryable()
-                .Where("Duration >= 0 && Duration < 1");
-
-
-
-            foreach (Security s in hierarchyBucket01Securities)
-
-            {
-
-                Console.WriteLine(s.PercentageMKV.ToString());
-
-                Console.WriteLine(s.Duration.ToString());
-
-            }
-
-
-
-            var hierarchyBucket13Securities = datalist.AsQueryable()
-
-                .Where("Duration >= 1 && Duration < 3");
-
-
-
-            foreach (Security s in hierarchyBucket13Securities)
-
-            {
-
-                Console.WriteLine(s.PercentageMKV.ToString());
-
-                Console.WriteLine(s.Duration.ToString());
-
-            }
-
-
-
-
-
-            var hierarchyBucket36Securities = datalist.AsQueryable()
-
-                .Where("Duration >= 3 && Duration < 6");
-
-
-
-            foreach (Security s in hierarchyBucket36Securities)
-
-            {
-
-                Console.WriteLine(s.PercentageMKV.ToString());
-
-                Console.WriteLine(s.Duration.ToString());
-
-            }
-
-
-
-            var groupHierarchyBucket01Securities = hierarchyBucket01Securities.AsQueryable()
-
-              .GroupBy("new(PortUID, Sector)", "it")
-
-               .Select("it");
-
-
-
-
-
-            foreach (var s in groupHierarchyBucket01Securities.Cast<IGrouping<DynamicClass, Security>>().Select(s => s))
-
-            {
-
-                Console.WriteLine(s.Key);
-
-
-
-                foreach (var sec in s)
-
-                {
-
-                    Console.WriteLine(sec.PercentageMKV.ToString());
-
-                    Console.WriteLine(sec.Duration.ToString());
-
-                }
-
-            }
-
-
-
-            var groupHierarchyBucket13Securities = hierarchyBucket13Securities.AsQueryable()
-
-                .GroupBy("new(PortUID, Sector)", "it");
-
-
-
-            foreach (var s in groupHierarchyBucket13Securities.Cast<IGrouping<DynamicClass, Security>>().Select(s => s))
-
-            {
-
-                Console.WriteLine(s.Key);
-
-
-
-                foreach (var sec in s)
-
-                {
-
-                    Console.WriteLine(sec.PercentageMKV.ToString());
-
-                    Console.WriteLine(sec.Duration.ToString());
-
-                }
-
-            }
-
-
-
-            var groupHierarchyBucket36Securities = hierarchyBucket36Securities.AsQueryable()
-
-                .GroupBy("new(PortUID, Sector)", "it");
-
-
-
-            foreach (var s in groupHierarchyBucket36Securities.Cast<IGrouping<DynamicClass, Security>>().Select(s => s))
-
-            {
-
-                Console.WriteLine(((dynamic)s.Key).PortUID);
-
-                Console.WriteLine(s.Key.GetType().GetProperty("Sector").GetValue(s.Key, null));
-
-                foreach (var sec in s)
-
-                {
-
-                    Console.WriteLine(sec.PercentageMKV.ToString());
-
-                    Console.WriteLine(sec.Duration.ToString());
-
-                }
-
-            }
-            */
-
-
-
-
-
-
-
-
-
-
-            /*
-
-            var hierarchyBucket01 = datalist.AsQueryable()
-
-                .Where("Duration >= 0 && Duration < 1")
-
-                .GroupBy("new(PortUID)", "it")
-
-                .Select("new(Key.PortUID, SUM(PercentageMKV) as PercentageMKV)");
-
- 
-
-            foreach (object o in hierarchyBucket01)
-
-                Console.WriteLine(o.ToString());
-
-           
-
-            var hierarchyBucket13 = datalist.AsQueryable()
-
-                .Where("Duration >= 1 && Duration < 3")
-
-                .GroupBy("new(PortUID)", "it")
-
-                .Select("new(Key.PortUID, SUM(PercentageMKV) as PercentageMKV)");
-
- 
-
-            foreach (object o in hierarchyBucket13)
-
-                Console.WriteLine(o.ToString());
-
- 
-
- 
-
-            var hierarchyBucket36 = datalist.AsQueryable()
-
-                .Where("Duration >= 3 && Duration < 6")
-
-                .GroupBy("new(PortUID)", "it")
-
-                .Select("new(Key.PortUID, SUM(PercentageMKV) as PercentageMKV)");
-
-                       
-
-            foreach (object o in hierarchyBucket36)
-
-                Console.WriteLine(o.ToString());
-
- 
-
- 
-
-            var groupHierarchyBucket01 = hierarchyBucket01.AsQueryable()
-
-              .GroupBy("new(PortUID, Sector)", "it")
-
-              .Select("new(Key.PortUID, Key.Sector, SUM(PercentageMKV) as PercentageMKV)");
-
- 
-
-            foreach (object o in groupHierarchyBucket01)
-
-                Console.WriteLine(o.ToString());
-
- 
-
-            var groupHierarchyBucket13 = hierarchyBucket13.AsQueryable()
-
-                .GroupBy("new(PortUID, Sector)", "it")
-
-                .Select("new(Key.PortUID, Key.Sector, SUM(PercentageMKV) as PercentageMKV)");
-
- 
-
-            foreach (object o in groupHierarchyBucket13)
-
-                Console.WriteLine(o.ToString());
-
- 
-
- 
-
-            var groupHierarchyBucket36 = hierarchyBucket36.AsQueryable()
-
-                .GroupBy("new(PortUID, Sector)", "it")
-
-                .Select("new(Key.PortUID, Key.Sector, SUM(PercentageMKV) as PercentageMKV)");
-
- 
-
-            foreach (object o in groupHierarchyBucket36)
-
-                Console.WriteLine(o.ToString());
-
-            */
+            
 
             Console.ReadLine();
 
@@ -321,17 +70,87 @@ namespace DynamicReporting
 
     }
 
+    class ReportFactory
+    {
+
+    }
+
     class Report
     {
         public string Name { get; set; }
-        public List<string> StatisticsFields { get; set; }
-        public ISecurityBucketFactory SideSecurityBucketFactory { get; set; }
-        public ISecurityBucketFactory TopSecurityBucketFactory { get; set; }
+        public List<StatisticsField> StatisticsFields { get; set; }
+        public ISecurityBucketFactory SecurityBucketFactory { get; set; }
     }
 
-    class ReportHelper
+    class ReportDataCreator
     {
+        private Dictionary<string, object> _data = new Dictionary<string, object>();
 
+        public HashSet<string> SideNames { get; set; }
+        public HashSet<string> TopNames { get; set; }
+
+        public ReportDataCreator(Report report, List<Security> securities)
+        {
+            SideNames = new HashSet<string>();
+            TopNames = new HashSet<string>();
+
+            var securityBuckets = report.SecurityBucketFactory.CreateSecurityBucket(securities, null);
+                       
+            foreach (var securityBucket in securityBuckets)
+            {
+
+
+                foreach (var childSecurityBucket in securityBucket.ChildrenSecurityBucket)
+                {
+
+                }
+
+            }
+
+            // get totals for whole report
+            dynamic fieldsData = CreateFieldData(securities, report);
+
+            foreach(var field in report.StatisticsFields)
+            {
+                var key = CreateKey(field.GetType().GetProperty("PortUID").GetValue(field, null).ToString(),
+                            null, null, field.FieldName);
+
+                _data.Add(key, field.GetType().GetProperty(field.FieldName).GetValue(field, null));
+            }
+
+        }
+
+        public string CreateKey(string portUID, string sideName = "", string topName = "", string fieldName = "")
+        {
+            return portUID + "~" + sideName ?? "" + "~" + topName ?? "" + "~" + fieldName ?? "";
+        }
+
+        public object GetData(string key)
+        {
+            if (_data.ContainsKey(key))
+            {
+                return _data[key];
+            }
+
+            throw new Exception("Invalid key: " + key);
+        }
+
+        private dynamic CreateFieldData(List<Security> securities, Report report)
+        {
+            string fields = string.Join(",", report.StatisticsFields.Select(f => f.Statistic + " as " + f.FieldName));
+
+            return securities.AsQueryable()
+                    .GroupBy("new(PortUID)", "it")
+                    .Select("new(Key.PortUID, " + fields)
+                    .Cast<dynamic>().Select(s1 => s1).FirstOrDefault();
+        }
+    }
+
+    class StatisticsField
+    {
+        public string Statistic { get; set; }
+        public string FieldName { get; set; }
+        public string DisplayName { get; set; }
     }
 
     class Security
